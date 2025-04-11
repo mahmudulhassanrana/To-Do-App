@@ -15,25 +15,31 @@ const form = ref({
   due_date: null,
 })
 
+// Error messages from Laravel
+const errors = ref({})
+
 // Submit task (create or update)
 const submit = async () => {
+  errors.value = {}
   try {
     await axios.get('/sanctum/csrf-cookie')
-
     if (form.value.id) {
-      await axios.post(`/tasks/${form.value.id}`, form.value)
+      await axios.post(`/tasks-update/${form.value.id}`, form.value)
     } else {
       await axios.post('/tasks', form.value)
     }
-
     closeModalAndReset()
     router.reload()
   } catch (error) {
-    console.error('Failed to submit task:', error)
+    if (error.response?.status === 422) {
+      errors.value = error.response.data.errors
+    } else {
+      console.error('Unexpected error:', error)
+    }
   }
 }
 
-// Edit task → populate form & show modal
+// Edit button fills the modal
 const editTask = (task) => {
   form.value = {
     id: task.id,
@@ -60,10 +66,11 @@ const deleteTask = async (id) => {
   }
 }
 
-// Reset form and close modal
+// Close modal & reset form
 const closeModalAndReset = () => {
   const modal = bootstrap.Modal.getInstance(document.getElementById('addTaskModal'))
-  if (modal) modal.hide()
+  modal?.hide()
+
   form.value = {
     id: null,
     title: '',
@@ -72,6 +79,8 @@ const closeModalAndReset = () => {
     priority: 'medium',
     due_date: null,
   }
+
+  errors.value = {}
 }
 
 // Logout
@@ -83,89 +92,132 @@ const logout = async () => {
     console.error('Logout failed:', error)
   }
 }
+
 </script>
 
 
 <template>
     <div class="container py-4">
-      <!-- Header -->
-      <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="mb-0">My To-Do List</h2>
-        <button class="btn btn-outline-danger" @click="logout">Logout</button>
-      </div>
-
-      <!-- Add Task Button -->
-      <div class="text-end mb-3">
-        <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addTaskModal">
-          + Add Task
-        </button>
-      </div>
-
-      <!-- Task List -->
-      <div v-if="tasks.length" class="list-group">
-        <div v-for="task in tasks" :key="task.id" class="list-group-item d-flex justify-content-between align-items-center">
-          <div>
-            <strong>{{ task.title }}</strong><br />
-            <small>{{ task.body }}</small><br />
-            <small>Status: {{ task.status }} | Priority: {{ task.priority }} | Due: {{ task.due_date }}</small>
-          </div>
-          <div class="btn-group">
-            <button class="btn btn-sm btn-primary" @click="editTask(task)">Edit</button>
-            <button class="btn btn-sm btn-danger" @click="deleteTask(task.id)">Delete</button>
-          </div>
+        <!-- Header -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="mb-0">📋 My To-Do List</h2>
+            <button class="btn btn-outline-danger" @click="logout">
+            <i class="bi bi-box-arrow-right me-1"></i> Logout
+            </button>
         </div>
-      </div>
-      <p v-else class="text-muted">No tasks found.</p>
 
-      <!-- Add/Edit Task Modal -->
-      <div class="modal fade" id="addTaskModal" tabindex="-1" aria-labelledby="addTaskModalLabel" aria-hidden="true">
+        <!-- Add Task Button -->
+        <div class="text-end mb-3">
+            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addTaskModal">
+            <i class="bi bi-plus-circle me-1"></i> Add Task
+            </button>
+        </div>
+
+        <!-- Task List -->
+        <div v-if="tasks.length" class="list-group">
+            <div
+            v-for="task in tasks"
+            :key="task.id"
+            class="list-group-item border-start-4 border-primary py-3"
+            >
+            <div class="d-flex justify-content-between">
+                <div>
+                <h5 class="mb-1">
+                    <i class="bi bi-check2-square me-2 text-primary"></i>{{ task.title }}
+                </h5>
+                <p class="mb-1 text-muted">{{ task.body }}</p>
+                <small class="text-secondary">
+                    <i class="bi bi-clock me-1"></i>Due: {{ task.due_date }} |
+                    <i class="bi bi-flag me-1"></i>Status: {{ task.status }} |
+                    <span :class="{
+                            'text-success': task.priority === 'low',
+                            'text-warning': task.priority === 'medium',
+                            'text-danger': task.priority === 'high',
+                        }"> <i class="bi bi-lightning-fill me-1"></i> Priority: {{ task.priority }}</span>
+                </small>
+                </div>
+                <div class="btn-group align-self-start">
+                <button class="btn btn-sm btn-outline-primary" @click="editTask(task)">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" @click="deleteTask(task.id)">
+                    <i class="bi bi-trash"></i>
+                </button>
+                </div>
+            </div>
+            </div>
+        </div>
+
+        <p v-else class="text-muted text-center mt-5">
+            <i class="bi bi-inbox me-2"></i>No tasks found.
+        </p>
+
+        <!-- Add/Edit Task Modal -->
+        <div class="modal fade" id="addTaskModal" tabindex="-1" aria-labelledby="addTaskModalLabel" aria-hidden="true">
         <div class="modal-dialog">
-          <form @submit.prevent="submit" class="modal-content">
+            <form @submit.prevent="submit" class="modal-content">
             <div class="modal-header">
-              <h5 class="modal-title" id="addTaskModalLabel">{{ form.id ? 'Edit Task' : 'Add Task' }}</h5>
-              <button type="button" @click="closeModalAndReset" class="btn-close" data-bs-dismiss="modal"></button>
+                <h5 class="modal-title" id="addTaskModalLabel">{{ form.id ? 'Edit Task' : 'Add Task' }}</h5>
+                <button type="button" class="btn-close" @click="closeModalAndReset" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-              <div class="mb-3">
-                <label class="form-label">Title</label>
-                <input v-model="form.title" class="form-control" required />
-              </div>
-              <div class="mb-3">
-                <label class="form-label">Description</label>
-                <textarea v-model="form.body" class="form-control" required></textarea>
-              </div>
-              <div class="row">
+                <!-- Title -->
+                <div class="mb-3">
+                <label class="form-label">Title <span class="text-danger">*</span> </label>
+                <input v-model="form.title" class="form-control" />
+                <div v-if="errors.title" class="text-danger mt-1">{{ errors.title[0] }}</div>
+                </div>
+
+                <!-- Body -->
+                <div class="mb-3">
+                <label class="form-label">Description <span class="text-danger">*</span></label>
+                <textarea v-model="form.body" class="form-control"></textarea>
+                <div v-if="errors.body" class="text-danger mt-1">{{ errors.body[0] }}</div>
+                </div>
+
+                <div class="row">
+                <!-- Status -->
                 <div class="col-md-4 mb-3">
-                  <label class="form-label">Status</label>
-                  <select v-model="form.status" class="form-select">
+                    <label class="form-label">Status</label>
+                    <select v-model="form.status" class="form-select">
                     <option value="pending">Pending</option>
                     <option value="in_progress">In Progress</option>
                     <option value="completed">Completed</option>
-                  </select>
+                    </select>
+                    <div v-if="errors.status" class="text-danger mt-1">{{ errors.status[0] }}</div>
                 </div>
+
+                <!-- Priority -->
                 <div class="col-md-4 mb-3">
-                  <label class="form-label">Priority</label>
-                  <select v-model="form.priority" class="form-select">
+                    <label class="form-label">Priority</label>
+                    <select v-model="form.priority" class="form-select">
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
                     <option value="high">High</option>
-                  </select>
+                    </select>
+                    <div v-if="errors.priority" class="text-danger mt-1">{{ errors.priority[0] }}</div>
                 </div>
+
+                <!-- Due Date -->
                 <div class="col-md-4 mb-3">
-                  <label class="form-label">Due Date</label>
-                  <input type="date" v-model="form.due_date" class="form-control" />
+                    <label class="form-label">Due Date</label>
+                    <input type="date" v-model="form.due_date" class="form-control" />
+                    <div v-if="errors.due_date" class="text-danger mt-1">{{ errors.due_date[0] }}</div>
                 </div>
-              </div>
+                </div>
             </div>
+
             <div class="modal-footer">
-              <button type="button" @click="closeModalAndReset" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-              <button type="submit" class="btn btn-primary">
+                <button type="button" class="btn btn-secondary" @click="closeModalAndReset" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary">
                 {{ form.id ? 'Update Task' : 'Add Task' }}
-              </button>
+                </button>
             </div>
-          </form>
+            </form>
         </div>
-      </div>
+        </div>
+
     </div>
+
   </template>
 
