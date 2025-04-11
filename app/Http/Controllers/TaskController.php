@@ -14,7 +14,8 @@ class TaskController extends Controller
     public function index()
     {
         return Inertia::render('Tasks/Index', [
-            'tasks' => auth()->user()->tasks()->latest()->paginate(15)
+            'tasks' => auth()->user()->tasks()->latest()->paginate(15),
+            'userName' =>auth()->user()->name
         ]);
     }
 

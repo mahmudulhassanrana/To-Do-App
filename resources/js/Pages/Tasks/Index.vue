@@ -6,7 +6,7 @@ import "vue3-toastify/dist/index.css";
 import { Bootstrap5Pagination } from 'laravel-vue-pagination';
 import axios from 'axios'
 
-const props = defineProps({ tasks: Object })
+const props = defineProps({ tasks: Object, userName: String})
 
 // Reactive form data
 const form = ref({
@@ -145,7 +145,7 @@ const getTasks = (page = 1) => {
     <div class="container py-4">
         <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="mb-0">📋 My To-Do List</h2>
+            <h2 class="mb-0">📋 My To-Do List ({{ userName }})</h2>
             <button class="btn btn-outline-danger" @click="logout">
             <i class="bi bi-box-arrow-right me-1"></i> Logout
             </button>
