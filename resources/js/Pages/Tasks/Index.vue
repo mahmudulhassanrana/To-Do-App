@@ -3,9 +3,10 @@ import { ref } from 'vue'
 import { router } from '@inertiajs/vue3'
 import { toast } from "vue3-toastify";
 import "vue3-toastify/dist/index.css";
+import { Bootstrap5Pagination } from 'laravel-vue-pagination';
 import axios from 'axios'
 
-const props = defineProps({ tasks: Array })
+const props = defineProps({ tasks: Object })
 
 // Reactive form data
 const form = ref({
@@ -130,6 +131,13 @@ const logout = async () => {
   }
 }
 
+const getTasks = (page = 1) => {
+  router.get(`/tasks?page=${page}`, {}, {
+    preserveState: true,
+    replace: true,
+  })
+}
+
 </script>
 
 
@@ -151,47 +159,48 @@ const logout = async () => {
         </div>
 
         <!-- Task List -->
-        <div v-if="tasks.length" class="list-group">
+        <div v-if="tasks.data.length" class="list-group">
             <div
-            v-for="task in tasks"
+            v-for="task in tasks.data"
             :key="task.id"
             class="list-group-item border-start-4 border-primary py-3"
             >
-            <div class="d-flex justify-content-between">
-                <div>
-                <h5 class="mb-1">
-                    <i class="bi bi-check2-square me-2 text-primary"></i>{{ task.title }}
-                </h5>
-                <p class="mb-1 text-muted">{{ task.body }}</p>
-                <small class="text-secondary">
-                    <i class="bi bi-clock me-1"></i>Due: {{ task.due_date }} |
-                    <i class="bi bi-flag me-1"></i>Status: {{ task.status }} |
-                    <span :class="{
-                            'text-success': task.priority === 'low',
-                            'text-warning': task.priority === 'medium',
-                            'text-danger': task.priority === 'high',
-                        }"> <i class="bi bi-lightning-fill me-1"></i> Priority: {{ task.priority }}</span>
-                </small>
-                </div>
-                <div class="btn-group align-self-start">
-                    <button  v-if="task.status !== 'completed'" class="btn btn-sm btn-outline-success" @click="markComplete(task)" title="Mark as Completed" >
-                        <i class="bi bi-check-circle"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-primary" title="Edit The Task" @click="editTask(task)">
-                        <i class="bi bi-pencil"></i>
-                    </button>
-                    <button class="btn btn-sm btn-outline-danger" title="Delete The Task" @click="deleteTask(task.id)">
-                        <i class="bi bi-trash"></i>
-                    </button>
+                <div class="d-flex justify-content-between">
+                    <div>
+                    <h5 class="mb-1">
+                        <i class="bi bi-check2-square me-2 text-primary"></i>{{ task.title }}
+                    </h5>
+                    <p class="mb-1 text-muted">{{ task.body }}</p>
+                    <small class="text-secondary">
+                        <i class="bi bi-clock me-1"></i>Due: {{ task.due_date }} |
+                        <i class="bi bi-flag me-1"></i>Status: {{ task.status }} |
+                        <span :class="{
+                                'text-success': task.priority === 'low',
+                                'text-warning': task.priority === 'medium',
+                                'text-danger': task.priority === 'high',
+                            }"> <i class="bi bi-lightning-fill me-1"></i> Priority: {{ task.priority }}</span>
+                    </small>
+                    </div>
+                    <div class="btn-group align-self-start">
+                        <button  v-if="task.status !== 'completed'" class="btn btn-sm btn-outline-success" @click="markComplete(task)" title="Mark as Completed" >
+                            <i class="bi bi-check-circle"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-primary" title="Edit The Task" @click="editTask(task)">
+                            <i class="bi bi-pencil"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-danger" title="Delete The Task" @click="deleteTask(task.id)">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
                 </div>
             </div>
-            </div>
+            <!-- Pagination (Bootstrap 5 Style) -->
+            <Bootstrap5Pagination :data="tasks" :limit="3" :show-disabled="true" @pagination-change-page="getTasks" class="mt-2"/>
         </div>
 
         <p v-else class="text-muted text-center mt-5">
             <i class="bi bi-inbox me-2"></i>No tasks found.
         </p>
-
         <!-- Add/Edit Task Modal -->
         <div class="modal fade" id="addTaskModal" tabindex="-1" aria-labelledby="addTaskModalLabel" aria-hidden="true">
         <div class="modal-dialog">
