@@ -1,6 +1,8 @@
 <script setup>
 import { ref } from 'vue'
 import { router } from '@inertiajs/vue3'
+import { toast } from "vue3-toastify";
+import "vue3-toastify/dist/index.css";
 import axios from 'axios'
 
 const props = defineProps({ tasks: Array })
@@ -25,8 +27,18 @@ const submit = async () => {
     await axios.get('/sanctum/csrf-cookie')
     if (form.value.id) {
       await axios.post(`/tasks-update/${form.value.id}`, form.value)
+      toast.success("Task updated successfully!", {
+                autoClose: 3000,
+                position: "bottom-right",
+                theme: "dark",
+            });
     } else {
       await axios.post('/tasks', form.value)
+      toast.success("Task created successfully!", {
+                autoClose: 3000,
+                position: "bottom-right",
+                theme: "dark",
+            });
     }
     closeModalAndReset()
     router.reload()
@@ -58,7 +70,12 @@ const deleteTask = async (id) => {
   if (confirm('Are you sure you want to delete this task?')) {
     try {
       await axios.get('/sanctum/csrf-cookie')
-      await axios.delete(`/tasks/${id}`)
+      await axios.post(`/tasks/${id}`)
+      toast.success("Task deleted  successfully!", {
+                autoClose: 3000,
+                position: "bottom-right",
+                theme: "dark",
+            });
       router.reload()
     } catch (error) {
       console.error('Delete failed:', error)
@@ -81,6 +98,26 @@ const closeModalAndReset = () => {
   }
 
   errors.value = {}
+}
+
+const markComplete = async (task) => {
+    if (confirm('Are you sure you want to complete this task?')) {
+        try {
+            await axios.get('/sanctum/csrf-cookie')
+            await axios.post(`/tasks-complete/${task.id}`, {
+            ...task,
+            status: 'completed',
+            })
+            toast.success("Task marked as completed!", {
+                autoClose: 3000,
+                position: "bottom-right",
+                theme: "dark",
+            });
+            router.reload()
+        } catch (error) {
+            console.error('Failed to complete task:', error)
+        }
+    }
 }
 
 // Logout
@@ -137,12 +174,15 @@ const logout = async () => {
                 </small>
                 </div>
                 <div class="btn-group align-self-start">
-                <button class="btn btn-sm btn-outline-primary" @click="editTask(task)">
-                    <i class="bi bi-pencil"></i>
-                </button>
-                <button class="btn btn-sm btn-outline-danger" @click="deleteTask(task.id)">
-                    <i class="bi bi-trash"></i>
-                </button>
+                    <button  v-if="task.status !== 'completed'" class="btn btn-sm btn-outline-success" @click="markComplete(task)" title="Mark as Completed" >
+                        <i class="bi bi-check-circle"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-primary" title="Edit The Task" @click="editTask(task)">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    <button class="btn btn-sm btn-outline-danger" title="Delete The Task" @click="deleteTask(task.id)">
+                        <i class="bi bi-trash"></i>
+                    </button>
                 </div>
             </div>
             </div>

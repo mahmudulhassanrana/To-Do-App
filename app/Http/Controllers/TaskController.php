@@ -86,4 +86,12 @@ class TaskController extends Controller
         $task->delete();
         return redirect()->back()->with('success', 'Task deleted.');
     }
+
+    public function complete(Task $task)
+    {
+        $task->update([
+           'status' => 'completed'
+        ]);
+        return redirect()->back()->with('success', 'Task completed.');
+    }
 }

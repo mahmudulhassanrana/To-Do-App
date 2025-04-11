@@ -23,4 +23,5 @@ Route::middleware(['auth'])->group(function () {
     Route::post('/tasks', [TaskController::class, 'store']);
     Route::post('/tasks-update/{task}', [TaskController::class, 'update']);
     Route::post('/tasks/{task}', [TaskController::class, 'destroy']);
+    Route::post('/tasks-complete/{task}', [TaskController::class, 'complete']);
 });
