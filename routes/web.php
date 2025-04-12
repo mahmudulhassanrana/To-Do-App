@@ -7,7 +7,7 @@ use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\LogoutController;
 use Inertia\Inertia;
 
-Route::middleware('guest')->get('/login', fn () => Inertia::render('Auth/Login'))->name('login');
+Route::middleware('guest')->get('/', fn () => Inertia::render('Auth/Login'))->name('login');
 Route::middleware('guest')->get('/register', fn () => Inertia::render('Auth/Register'))->name('register');
 
 Route::middleware('guest')->post('/login', LoginController::class);
@@ -18,7 +18,7 @@ Route::middleware('auth')->post('/logout', LogoutController::class)->name('logou
 Route::middleware('auth')->get('/user', fn () => auth()->user());
 
 Route::middleware(['auth'])->group(function () {
-    Route::get('/', fn () => redirect('/tasks'));
+    // Route::get('/', fn () => redirect('/tasks'));
     Route::get('/tasks', [TaskController::class, 'index']);
     Route::post('/tasks', [TaskController::class, 'store']);
     Route::post('/tasks-update/{task}', [TaskController::class, 'update']);

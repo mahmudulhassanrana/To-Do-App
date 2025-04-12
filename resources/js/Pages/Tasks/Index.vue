@@ -125,7 +125,7 @@ const markComplete = async (task) => {
 const logout = async () => {
   try {
     await axios.post('/logout')
-    router.visit('/login')
+    router.visit('/')
   } catch (error) {
     console.error('Logout failed:', error)
   }

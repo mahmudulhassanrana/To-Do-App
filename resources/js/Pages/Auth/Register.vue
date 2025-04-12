@@ -95,7 +95,7 @@ const submit = async () => {
                 <span class="text-sm text-gray-600">Already have an account?</span>
                 <button
                     type="button"
-                    @click="router.visit('/login')"
+                    @click="router.visit('/')"
                     class="ml-1 ms-1 text-blue-600 hover:underline font-medium"
                 >
                 Login
